@@ -1,4 +1,5 @@
 #include <math.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -113,7 +114,7 @@ int MaxFragmentsInTriangle(windowCoords wc[3]) {
     return (maxX - minX) * (maxY - minY);
 }
 
-fragmentList ScanConversion(windowCoords *wc) {
+int ScanConversion(windowCoords *wc, fragment *frags) {
     // scan convert a trinangle (3 window coordinates -> 1 triangle) -> return a list of fragments
     int width = tb_width();
     int height = tb_height();
@@ -122,10 +123,7 @@ fragmentList ScanConversion(windowCoords *wc) {
     windowCoords wc2 = wc[1];
     windowCoords wc3 = wc[2];
 
-    fragmentList ret = {
-        malloc(MaxFragmentsInTriangle(wc) * sizeof(fragment)),
-        0,
-    };
+    int count = 0;
 
     for (int x = 0; x < width; x++) {
         for (int y = 0; y < height; y++) {
@@ -140,34 +138,26 @@ fragmentList ScanConversion(windowCoords *wc) {
             );
 
             if (lambda1 >= 0 && lambda2 >= 0 && lambda3 >= 0) {
-                ret.data[ret.count] = (fragment){
+                frags[count] = (fragment){
                     x,
                     y,
                     wc1.z * lambda1 + wc2.z * lambda2 + wc3.z * lambda3,
                 };
-                ret.count++;
+                count++;
             }
         }
     }
-    return ret;
+
+    return count;
 }
 
-char MapDepthToChar(double depth) {
-    // Map depth value to ascii character
-    // @ # : .
-    if (depth < 0.25) { return '@'; }
-    else if (depth < 0.50) { return '#'; }
-    else if (depth < 0.75) { return ':'; }
-    return '.';
-}
-
-void FragmentWriting(fragmentList *fl) {
+void FragmentWriting(fragment *frags, int count) {
     // write each fragment to the screen with termbox2
-    for (int f = 0; f < fl->count; f++) {
+    for (int f = 0; f < count; f++) {
         uint32_t unicode;
         char ch = '#';
         tb_utf8_char_to_unicode(&unicode, &ch);
-        tb_set_cell(fl->data[f].x, fl->data[f].y, unicode, TB_WHITE, 0);
+        tb_set_cell(frags[f].x, frags[f].y, unicode, TB_WHITE, 0);
     }
 }
 
@@ -207,11 +197,15 @@ int main(void) {
                     )
                 );
             }
-            fragmentList fragments = ScanConversion(finalWC);
 
-            FragmentWriting(&fragments);
+            fragment *frags = malloc(MaxFragmentsInTriangle(finalWC) * sizeof(fragment));
+
+            int count = ScanConversion(finalWC, frags);
+
+            FragmentWriting(frags, count);
 
             free(finalWC);
+            free(frags);
         }
 
         tb_present();

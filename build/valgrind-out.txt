@@ -1,0 +1,114 @@
+==18280== Memcheck, a memory error detector
+==18280== Copyright (C) 2002-2024, and GNU GPL'd, by Julian Seward et al.
+==18280== Using Valgrind-3.25.1-4441567fbe-20250520 and LibVEX; rerun with -h for copyright info
+==18280== Command: ./main.out
+==18280== Parent PID: 5085
+==18280== 
+--18280-- 
+--18280-- Valgrind options:
+--18280--    --leak-check=full
+--18280--    --show-leak-kinds=all
+--18280--    --track-origins=yes
+--18280--    --verbose
+--18280--    --log-file=valgrind-out.txt
+--18280-- Contents of /proc/version:
+--18280--   Linux version 6.18.37_1 (voidlinux@voidlinux) (gcc (GCC) 14.2.1 20250405, GNU ld (GNU Binutils) 2.44) #1 SMP PREEMPT_DYNAMIC Sat Jun 27 15:08:49 UTC 2026
+--18280-- 
+--18280-- Arch and hwcaps: AMD64, LittleEndian, amd64-cx16-lzcnt-rdtscp-sse3-ssse3-avx-avx2-bmi-f16c-rdrand-rdseed-fma
+--18280-- Page sizes: currently 4096, max supported 4096
+--18280-- Valgrind library directory: /usr/libexec/valgrind
+--18280-- Reading syms from /home/user/Projects/c/raster/build/main.out
+--18280-- Reading syms from /usr/lib/ld-linux-x86-64.so.2
+--18280-- Reading syms from /usr/libexec/valgrind/memcheck-amd64-linux
+--18280--    object doesn't have a dynamic symbol table
+--18280-- Scheduler: using generic scheduler lock implementation.
+--18280-- Reading suppressions file: /usr/libexec/valgrind/default.supp
+==18280== embedded gdbserver: reading from /tmp/vgdb-pipe-from-vgdb-to-18280-by-user-on-???
+==18280== embedded gdbserver: writing to   /tmp/vgdb-pipe-to-vgdb-from-18280-by-user-on-???
+==18280== embedded gdbserver: shared mem   /tmp/vgdb-pipe-shared-mem-vgdb-18280-by-user-on-???
+==18280== 
+==18280== TO CONTROL THIS PROCESS USING vgdb (which you probably
+==18280== don't want to do, unless you know exactly what you're doing,
+==18280== or are doing some strange experiment):
+==18280==   /usr/libexec/valgrind/../../bin/vgdb --pid=18280 ...command...
+==18280== 
+==18280== TO DEBUG THIS PROCESS USING GDB: start GDB like this
+==18280==   /path/to/gdb ./main.out
+==18280== and then give GDB the following command
+==18280==   target remote | /usr/libexec/valgrind/../../bin/vgdb --pid=18280
+==18280== --pid is optional if only one valgrind process is running
+==18280== 
+--18280-- Warning: cross-CU LIMITATION: some inlined fn names
+--18280-- might be shown as UnknownInlinedFun
+--18280-- REDIR: 0x403c4c0 (ld-linux-x86-64.so.2:strlen) redirected to 0x5822a652 (vgPlain_amd64_linux_REDIR_FOR_strlen)
+--18280-- REDIR: 0x403aec0 (ld-linux-x86-64.so.2:strcmp) redirected to 0x5822a66c (vgPlain_amd64_linux_REDIR_FOR_strcmp)
+--18280-- REDIR: 0x403aca0 (ld-linux-x86-64.so.2:index) redirected to 0x5822a6a5 (vgPlain_amd64_linux_REDIR_FOR_index)
+--18280-- REDIR: 0x403a060 (ld-linux-x86-64.so.2:bcmp) redirected to 0x5822a687 (vgPlain_amd64_linux_REDIR_FOR_memcmp)
+--18280-- Reading syms from /usr/libexec/valgrind/vgpreload_core-amd64-linux.so
+--18280-- Reading syms from /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so
+==18280== WARNING: new redirection conflicts with existing -- ignoring it
+--18280--     old: 0x0403aec0 (strcmp              ) R-> (0000.0) 0x5822a66c vgPlain_amd64_linux_REDIR_FOR_strcmp
+--18280--     new: 0x0403aec0 (strcmp              ) R-> (2016.0) 0x04864e70 strcmp
+==18280== WARNING: new redirection conflicts with existing -- ignoring it
+--18280--     old: 0x0403c4c0 (strlen              ) R-> (0000.0) 0x5822a652 vgPlain_amd64_linux_REDIR_FOR_strlen
+--18280--     new: 0x0403c4c0 (strlen              ) R-> (2007.0) 0x04863ba0 strlen
+--18280-- REDIR: 0x403a330 (ld-linux-x86-64.so.2:mempcpy) redirected to 0x48694a0 (mempcpy)
+--18280-- Reading syms from /usr/lib/libm.so.6
+--18280-- Reading syms from /usr/lib/libc.so.6
+--18280-- REDIR: 0x403c660 (ld-linux-x86-64.so.2:strncmp) redirected to 0x4864660 (strncmp)
+--18280-- REDIR: 0x4a14420 (libc.so.6:strnlen) redirected to 0x484f1b0 (_vgnU_ifunc_wrapper)
+--18280-- REDIR: 0x4a144a0 (libc.so.6:strpbrk) redirected to 0x484f1b0 (_vgnU_ifunc_wrapper)
+--18280-- REDIR: 0x4a125e0 (libc.so.6:strcmp) redirected to 0x484f1b0 (_vgnU_ifunc_wrapper)
+--18280-- REDIR: 0x4a28ee0 (libc.so.6:wcsnlen) redirected to 0x484f1b0 (_vgnU_ifunc_wrapper)
+--18280-- REDIR: 0x4a11790 (libc.so.6:memset) redirected to 0x484f1b0 (_vgnU_ifunc_wrapper)
+--18280-- REDIR: 0x4a28690 (libc.so.6:wcslen) redirected to 0x484f1b0 (_vgnU_ifunc_wrapper)
+--18280-- REDIR: 0x4a11710 (libc.so.6:memrchr) redirected to 0x484f1b0 (_vgnU_ifunc_wrapper)
+--18280-- REDIR: 0x4a28e80 (libc.so.6:wcsncpy) redirected to 0x484f1b0 (_vgnU_ifunc_wrapper)
+--18280-- REDIR: 0x4a10db0 (libc.so.6:memcpy@@GLIBC_2.14) redirected to 0x484f1b0 (_vgnU_ifunc_wrapper)
+--18280-- REDIR: 0x4a27460 (libc.so.6:wcschr) redirected to 0x484f1b0 (_vgnU_ifunc_wrapper)
+--18280-- REDIR: 0x4a124f0 (libc.so.6:index) redirected to 0x484f1b0 (_vgnU_ifunc_wrapper)
+--18280-- REDIR: 0x4a144d0 (libc.so.6:rindex) redirected to 0x484f1b0 (_vgnU_ifunc_wrapper)
+--18280-- REDIR: 0x4a27500 (libc.so.6:wcscmp) redirected to 0x484f1b0 (_vgnU_ifunc_wrapper)
+--18280-- REDIR: 0x4a119e0 (libc.so.6:stpncpy) redirected to 0x484f1b0 (_vgnU_ifunc_wrapper)
+--18280-- REDIR: 0x4a33e10 (libc.so.6:wmemchr) redirected to 0x484f1b0 (_vgnU_ifunc_wrapper)
+--18280-- REDIR: 0x4a142f0 (libc.so.6:strncmp) redirected to 0x484f1b0 (_vgnU_ifunc_wrapper)
+--18280-- REDIR: 0x4a11a40 (libc.so.6:strcasecmp) redirected to 0x484f1b0 (_vgnU_ifunc_wrapper)
+--18280-- REDIR: 0x4a13760 (libc.so.6:strcspn) redirected to 0x484f1b0 (_vgnU_ifunc_wrapper)
+--18280-- REDIR: 0x4a284c0 (libc.so.6:wcscpy) redirected to 0x484f1b0 (_vgnU_ifunc_wrapper)
+--18280-- REDIR: 0x4a12480 (libc.so.6:strcat) redirected to 0x484f1b0 (_vgnU_ifunc_wrapper)
+--18280-- REDIR: 0x4a14200 (libc.so.6:strncasecmp_l) redirected to 0x484f1b0 (_vgnU_ifunc_wrapper)
+--18280-- REDIR: 0x4a12560 (libc.so.6:strchrnul) redirected to 0x484f1b0 (_vgnU_ifunc_wrapper)
+--18280-- REDIR: 0x4a10cc0 (libc.so.6:bcmp) redirected to 0x484f1b0 (_vgnU_ifunc_wrapper)
+--18280-- REDIR: 0x4a136f0 (libc.so.6:strcpy) redirected to 0x484f1b0 (_vgnU_ifunc_wrapper)
+--18280-- REDIR: 0x4a11ad0 (libc.so.6:strcasecmp_l) redirected to 0x484f1b0 (_vgnU_ifunc_wrapper)
+--18280-- REDIR: 0x4a140f0 (libc.so.6:strlen) redirected to 0x484f1b0 (_vgnU_ifunc_wrapper)
+--18280-- REDIR: 0x4a14380 (libc.so.6:strncpy) redirected to 0x484f1b0 (_vgnU_ifunc_wrapper)
+--18280-- REDIR: 0x4a33e90 (libc.so.6:wmemcmp) redirected to 0x484f1b0 (_vgnU_ifunc_wrapper)
+--18280-- REDIR: 0x4a11970 (libc.so.6:stpcpy) redirected to 0x484f1b0 (_vgnU_ifunc_wrapper)
+--18280-- REDIR: 0x4a114f0 (libc.so.6:memmove) redirected to 0x484f1b0 (_vgnU_ifunc_wrapper)
+==18280== Preferring higher priority redirection:
+--18280--     old: 0x04ac99c0 (__memcpy_avx_unalign) R-> (2018.0) 0x04866520 __memcpy_avx_unaligned_erms
+--18280--     new: 0x04ac99c0 (__memcpy_avx_unalign) R-> (2018.1) 0x048681f0 memmove
+--18280-- REDIR: 0x4a10c40 (libc.so.6:memchr) redirected to 0x484f1b0 (_vgnU_ifunc_wrapper)
+--18280-- REDIR: 0x4a14690 (libc.so.6:strspn) redirected to 0x484f1b0 (_vgnU_ifunc_wrapper)
+--18280-- REDIR: 0x4a270c0 (libc.so.6:wcpncpy) redirected to 0x484f1b0 (_vgnU_ifunc_wrapper)
+--18280-- REDIR: 0x4a11600 (libc.so.6:mempcpy) redirected to 0x484f1b0 (_vgnU_ifunc_wrapper)
+--18280-- REDIR: 0x4a14170 (libc.so.6:strncasecmp) redirected to 0x484f1b0 (_vgnU_ifunc_wrapper)
+--18280-- REDIR: 0x4ace5b0 (libc.so.6:__strrchr_avx2) redirected to 0x4863360 (rindex)
+--18280-- REDIR: 0x4aca3c0 (libc.so.6:__memset_avx2_unaligned_erms) redirected to 0x48680b0 (memset)
+--18280-- REDIR: 0x4acc700 (libc.so.6:__strlen_avx2) redirected to 0x4863a80 (strlen)
+--18280-- REDIR: 0x4acd7e0 (libc.so.6:__strncmp_avx2) redirected to 0x4864480 (strncmp)
+--18280-- REDIR: 0x4acbd80 (libc.so.6:__strchrnul_avx2) redirected to 0x4868f70 (strchrnul)
+--18280-- REDIR: 0x4ac99c0 (libc.so.6:__memcpy_avx_unaligned_erms) redirected to 0x48681f0 (memmove)
+--18280-- REDIR: 0x4a0d0d0 (libc.so.6:malloc) redirected to 0x485a750 (malloc)
+--18280-- REDIR: 0x4a0d770 (libc.so.6:free) redirected to 0x485d720 (free)
+--18280-- REDIR: 0x4acbb40 (libc.so.6:__strchr_avx2) redirected to 0x48635a0 (index)
+--18280-- REDIR: 0x4a0dab0 (libc.so.6:realloc) redirected to 0x4861c00 (realloc)
+==18280== 
+==18280== HEAP SUMMARY:
+==18280==     in use at exit: 0 bytes in 0 blocks
+==18280==   total heap usage: 523 allocs, 523 frees, 220,532 bytes allocated
+==18280== 
+==18280== All heap blocks were freed -- no leaks are possible
+==18280== 
+==18280== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
