@@ -11,6 +11,8 @@
 
 int width, height;
 
+int wireframeMode = 1; // 0 -> off | 1 -> on
+
 
 typedef struct {
     double x;
@@ -158,17 +160,35 @@ int ScanConversion(windowCoords *wc, fragment *frags, boundingBox *bb, cell *cel
             );
 
             if (lambda1 >= 0 && lambda2 >= 0 && lambda3 >= 0) {
-                double depth = wc1.z * lambda1 + wc2.z * lambda2 + wc3.z * lambda3;
-                if (depth < cells[x + (y * width)].currentDepth) {
-                    frags[count] = (fragment){
-                        x,
-                        y,
-                        depth,
-                    };
-                    count++;
-                    cells[x + (y * width)].currentDepth = depth;
+                // Check if rendering in wireframe mode
+                if (wireframeMode == 0) {
+                    // Render normally
+                    double depth = wc1.z * lambda1 + wc2.z * lambda2 + wc3.z * lambda3;
+                    if (depth < cells[x + (y * width)].currentDepth) {
+                        frags[count] = (fragment){
+                            x,
+                            y,
+                            depth,
+                        };
+                        count++;
+                        cells[x + (y * width)].currentDepth = depth;
+                    }
+                }
+                else if (lambda1 <= 0.03 || lambda2 <= 0.03 || lambda3 <= 0.03) {
+                    // Render in wireframe mode
+                    double depth = wc1.z * lambda1 + wc2.z * lambda2 + wc3.z * lambda3;
+                    if (depth < cells[x + (y * width)].currentDepth) {
+                        frags[count] = (fragment){
+                            x,
+                            y,
+                            depth,
+                        };
+                        count++;
+                        cells[x + (y * width)].currentDepth = depth;
+                    }
                 }
             }
+
         }
     }
 
