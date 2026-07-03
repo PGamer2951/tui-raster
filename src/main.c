@@ -1,11 +1,11 @@
 #include <math.h>
 #include <stddef.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 #define TB_IMPL
 #include <termbox2.h>
+
+#include "../include/obj-loader.h"
 
 #define PI 3.1415926
 
@@ -18,11 +18,7 @@ typedef struct {
     double x;
     double y;
     double z;
-} vertex, ndCoords;
-
-typedef struct {
-    vertex vertices[3];
-} triangle;
+} ndCoords;
 
 typedef struct {
     double x1;
@@ -145,8 +141,8 @@ int ScanConversion(windowCoords *wc, fragment *frags, boundingBox *bb, cell *cel
     windowCoords wc3 = wc[2];
 
     int count = 0;
-    for (int x = bb->x1 -1; x < bb->x2 + 1; x++) {
-        for (int y = bb->y1 -1; y < bb->y2 + 1; y++) {
+    for (int x = bb->x1; x < bb->x2; x++) {
+        for (int y = bb->y1; y < bb->y2; y++) {
             double det = ((wc2.y-wc3.y)*(wc1.x-wc3.x)+(wc3.x-wc2.x)*(wc1.y-wc3.y));
 
             double lambda1 = (
@@ -174,7 +170,7 @@ int ScanConversion(windowCoords *wc, fragment *frags, boundingBox *bb, cell *cel
                         cells[x + (y * width)].currentDepth = depth;
                     }
                 }
-                else if (lambda1 <= 0.03 || lambda2 <= 0.03 || lambda3 <= 0.03) {
+                else if (lambda1 <= 0.05 || lambda2 <= 0.05 || lambda3 <= 0.05) {
                     // Render in wireframe mode
                     double depth = wc1.z * lambda1 + wc2.z * lambda2 + wc3.z * lambda3;
                     if (depth < cells[x + (y * width)].currentDepth) {
@@ -216,6 +212,11 @@ void ClearDepthBuffer(cell *cells) {
 }
 
 int main(void) {
+    printf("Main init");
+    triangle *mesh = malloc(sizeof(triangle) * 100);
+    int triangleCount = LoadFromFile("data/cube.obj", mesh);
+    printf("Done loading");
+
     if (tb_init() != TB_OK) { return 1; } // initialize termbox2
     tb_set_output_mode(2); // allow termbox2 to use more colors
 
@@ -226,26 +227,6 @@ int main(void) {
     height = tb_height();
 
     InitPerspectiveMatrix();
-
-    triangle triangles[] = {
-        // Camera is staring down the -Z axis
-        //   -> z = -0.2 : depth = 0; (Near clip)
-        //   -> z = -4.0 : depth = 1; (Far clip)
-        {
-            {
-                {-1.0, -1.0, -2.0},
-                {1.0, -1.0, -2.0},
-                {0.0, 1.0, -2.0},
-            }
-        },
-        {
-            {
-                {-1.0, -0.5, -1.0},
-                {-1.0, 0.5, -1.0},
-                {1.0, 0.0, -3.0},
-            }
-        },
-    };
 
     windowCoords finalWC[3];
     boundingBox box;
@@ -260,11 +241,11 @@ int main(void) {
         cell *screenCells = malloc(width * height * sizeof(cell));
         ClearDepthBuffer(screenCells);
 
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < triangleCount; i++) {
             for (int v = 0; v < 3; v++) {
                 finalWC[v] = WindowTransformation(
                     NormalizeDeviceCoordinates(
-                        ClipSpaceTransform(triangles[i].vertices[v])
+                        ClipSpaceTransform(mesh[i].vertices[v])
                     )
                 );
             }

@@ -1,6 +1,10 @@
-build: src/main.c
-	gcc src/main.c -o tui-raster.o -lm
+command = gcc src/main.c src/obj-loader.c -o tui-raster.o -lm
+
+build: src/main.c src/obj-loader.c
+	$(command)
 
 clean: tui-raster.o
 	rm tui-raster.o
-	gcc src/main.c -o tui-raster.o -lm
+	$(command)
+
+obj-loader.c: include/obj-loader.h
