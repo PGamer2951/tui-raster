@@ -1,14 +1,10 @@
-typedef struct {
-    double x;
-    double y;
-    double z;
-} vertex;
+#ifndef OBJ_LOADER_H
+#define OBJ_LOADER_H
 
-typedef struct {
-    vertex vertices[3];
-} triangle;
+#include "../include/custom-types.h"
 
-int LoadFromFile(char *path, triangle *mesh);
+int LoadFromFile(char *path, Triangle *mesh);
 
-vertex GetVertexFromText(char *text);
-triangle GetTriangleFromText(char *text, vertex *vertices);
+Vertex GetVertexFromText(char *text);
+Triangle GetTriangleFromText(char *text, Vertex *vertices);
+#endif

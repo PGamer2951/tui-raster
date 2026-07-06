@@ -1,52 +1,13 @@
 #include <math.h>
-#include <stddef.h>
-#include <stdio.h>
 
 #define TB_IMPL
 #include <termbox2.h>
 
 #include "../include/obj-loader.h"
 
-#define PI 3.1415926
-
 int width, height;
 
 int wireframeMode = 1; // 0 -> off | 1 -> on
-
-
-typedef struct {
-    double x;
-    double y;
-    double z;
-} ndCoords;
-
-typedef struct {
-    double x1;
-    double y1;
-    double x2;
-    double y2;
-} boundingBox;
-
-typedef struct {
-    double x;
-    double y;
-    double z;
-    double w;
-} clipCoords;
-
-typedef struct {
-    double x, y; // X Y -> window coordinates
-    double z;    // z -> depth
-} windowCoords, fragment;
-
-typedef struct {
-    fragment *data;
-    size_t count;
-} fragmentList;
-
-typedef struct {
-    double currentDepth;
-} cell;
 
 double perspectiveMatrix[4][4];
 
@@ -73,35 +34,32 @@ void InitPerspectiveMatrix() {
     perspectiveMatrix[3][2] = -1.0;
 }
 
-clipCoords ClipSpaceTransform(vertex vx) {
+ClipCoords ClipSpaceTransform(Vertex vx) {
     // Multiply vertex coordinates by perspective matrix -> return clip coordinates
-    clipCoords ret = {
+    return (ClipCoords) {
         vx.x * perspectiveMatrix[0][0],
         vx.y * perspectiveMatrix[1][1],
         vx.z * perspectiveMatrix[2][2] + perspectiveMatrix[2][3],
         vx.z * perspectiveMatrix[3][2],
     };
-    return ret;
 }
 
-ndCoords NormalizeDeviceCoordinates(clipCoords cc) {
+NdCoords NormalizeDeviceCoordinates(ClipCoords cc) {
     // Divide cc's x, y and z components by w -> return normalized device coordinates
-    ndCoords ret = {
+    return (NdCoords){
         cc.x / cc.w,
         cc.y / cc.w,
         cc.z / cc.w,
     };
-    return ret;
 }
 
-windowCoords WindowTransformation(ndCoords nc) {
+WindowCoords WindowTransformation(NdCoords nc) {
     // Convert normalized device coordinates to window coordinates -> return window coordinates
-    windowCoords ret = {
+    return (WindowCoords) {
         (nc.x + 1) / 2 * width,
         (nc.y + 1) / 2 * height,
         (nc.z + 1) / 2,
     };
-    return ret;
 }
 
 int max(int a, int b, int c) {
@@ -114,7 +72,7 @@ int min(int a, int b, int c) {
     return _min < c ? _min : c;
 }
 
-int MaxFragmentsInTriangle(windowCoords wc[3], boundingBox *bb) {
+int MaxFragmentsInTriangle(WindowCoords wc[3], BoundingBox *bb) {
     // Calculates the max amount of fragments a given triangle could have based on it's vertices
     // Also updates the triangle's bounding box for faster scan conversion
     int minX, maxX, minY, maxY = 0;
@@ -134,11 +92,11 @@ int MaxFragmentsInTriangle(windowCoords wc[3], boundingBox *bb) {
     return (maxX - minX) * (maxY - minY);
 }
 
-int ScanConversion(windowCoords *wc, fragment *frags, boundingBox *bb, cell *cells) {
+int ScanConversion(WindowCoords *wc, Fragment *frags, BoundingBox *bb, Cell *cells) {
     // scan convert a triangle (3 window coordinates -> 1 triangle)
-    windowCoords wc1 = wc[0];
-    windowCoords wc2 = wc[1];
-    windowCoords wc3 = wc[2];
+    WindowCoords wc1 = wc[0];
+    WindowCoords wc2 = wc[1];
+    WindowCoords wc3 = wc[2];
 
     int count = 0;
     for (int x = bb->x1; x < bb->x2; x++) {
@@ -161,7 +119,7 @@ int ScanConversion(windowCoords *wc, fragment *frags, boundingBox *bb, cell *cel
                     // Render normally
                     double depth = wc1.z * lambda1 + wc2.z * lambda2 + wc3.z * lambda3;
                     if (depth < cells[x + (y * width)].currentDepth) {
-                        frags[count] = (fragment){
+                        frags[count] = (Fragment){
                             x,
                             y,
                             depth,
@@ -174,7 +132,7 @@ int ScanConversion(windowCoords *wc, fragment *frags, boundingBox *bb, cell *cel
                     // Render in wireframe mode
                     double depth = wc1.z * lambda1 + wc2.z * lambda2 + wc3.z * lambda3;
                     if (depth < cells[x + (y * width)].currentDepth) {
-                        frags[count] = (fragment){
+                        frags[count] = (Fragment){
                             x,
                             y,
                             depth,
@@ -191,18 +149,18 @@ int ScanConversion(windowCoords *wc, fragment *frags, boundingBox *bb, cell *cel
     return count;
 }
 
-void FragmentWriting(fragment *frags, int count, int tri) {
+void FragmentWriting(Fragment *frags, int count) {
     // write each fragment to the screen with termbox2
     for (int f = 0; f < count; f++) {
         uint32_t unicode;
         char ch = '#';
-        uintattr_t color = tri == 0 ? 0x0000 : 0x0001;
+        uintattr_t color = 0x0000;
         tb_utf8_char_to_unicode(&unicode, &ch);
         tb_set_cell(frags[f].x, frags[f].y, unicode, color, 0);
     }
 }
 
-void ClearDepthBuffer(cell *cells) {
+void ClearDepthBuffer(Cell *cells) {
     // Initialize every cell with a depth of -4.0
     for (int x = 0; x < width; x++) {
         for (int y = 0; y < height; y++) {
@@ -212,10 +170,8 @@ void ClearDepthBuffer(cell *cells) {
 }
 
 int main(void) {
-    printf("Main init");
-    triangle *mesh = malloc(sizeof(triangle) * 100);
+    Triangle *mesh = malloc(sizeof(Triangle) * 100);
     int triangleCount = LoadFromFile("data/cube.obj", mesh);
-    printf("Done loading");
 
     if (tb_init() != TB_OK) { return 1; } // initialize termbox2
     tb_set_output_mode(2); // allow termbox2 to use more colors
@@ -228,8 +184,8 @@ int main(void) {
 
     InitPerspectiveMatrix();
 
-    windowCoords finalWC[3];
-    boundingBox box;
+    WindowCoords finalWC[3];
+    BoundingBox box;
 
     // main loop
     while (running == 1) {
@@ -238,7 +194,7 @@ int main(void) {
         width = tb_width();
         height = tb_height();
 
-        cell *screenCells = malloc(width * height * sizeof(cell));
+        Cell *screenCells = malloc(width * height * sizeof(Cell));
         ClearDepthBuffer(screenCells);
 
         for (int i = 0; i < triangleCount; i++) {
@@ -250,11 +206,11 @@ int main(void) {
                 );
             }
 
-            fragment *frags = malloc(MaxFragmentsInTriangle(finalWC, &box) * sizeof(fragment));
+            Fragment *frags = malloc(MaxFragmentsInTriangle(finalWC, &box) * sizeof(Fragment));
 
             int count = ScanConversion(finalWC, frags, &box, screenCells);
 
-            FragmentWriting(frags, count, i);
+            FragmentWriting(frags, count);
 
             free(frags);
         }
@@ -271,6 +227,8 @@ int main(void) {
     }
 
     tb_shutdown();
+
+    free(mesh);
 
     return 0;
 }

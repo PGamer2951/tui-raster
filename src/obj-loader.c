@@ -5,9 +5,8 @@
 #include <string.h>
 #include <unistd.h>
 
-int LoadFromFile(char *path, triangle *mesh) {
-    printf("Loading file ...");
-    vertex vertices[300];
+int LoadFromFile(char *path, Triangle *mesh) {
+    Vertex vertices[300];
 
     FILE *ptr = fopen(path, "r");
 
@@ -34,12 +33,14 @@ int LoadFromFile(char *path, triangle *mesh) {
         }
     }
 
+    fclose(ptr);
+
     return triangleCount;
 }
 
-vertex GetVertexFromText(char *text) {
+Vertex GetVertexFromText(char *text) {
     char *split = strtok(text, " ");
-    vertex ret;
+    Vertex ret;
 
     int n = 0;
 
@@ -67,9 +68,9 @@ vertex GetVertexFromText(char *text) {
     return ret;
 }
 
-triangle GetTriangleFromText(char *text, vertex *vertices) {
+Triangle GetTriangleFromText(char *text, Vertex *vertices) {
     char *split = strtok(text, " ");
-    triangle ret;
+    Triangle ret;
 
     int n = 0;
 
