@@ -36,4 +36,10 @@ typedef struct {
     Vertex vertices[3];
 } Triangle;
 
+typedef enum {
+    X_AXIS,
+    Y_AXIS,
+    Z_AXIS,
+} RotationAxis, MovementAxis;
+
 #endif

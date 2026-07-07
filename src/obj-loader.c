@@ -63,8 +63,6 @@ Vertex GetVertexFromText(char *text) {
         split = strtok(NULL, " ");
     }
 
-    free(split);
-
     return ret;
 }
 
@@ -82,8 +80,6 @@ Triangle GetTriangleFromText(char *text, Vertex *vertices) {
         n++;
         split = strtok(NULL, " ");
     }
-
-    free(split);
 
     return ret;
 }

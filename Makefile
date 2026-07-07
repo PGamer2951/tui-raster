@@ -1,4 +1,4 @@
-command = gcc src/main.c src/obj-loader.c -o tui-raster.o -lm
+command = gcc src/main.c src/obj-loader.c src/matrix-math.c -o tui-raster.o -lm
 
 build: src/main.c src/obj-loader.c
 	$(command)

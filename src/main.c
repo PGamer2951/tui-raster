@@ -4,10 +4,11 @@
 #include <termbox2.h>
 
 #include "../include/obj-loader.h"
+#include "../include/matrix-math.h"
 
 int width, height;
 
-int wireframeMode = 1; // 0 -> off | 1 -> on
+int wireframeMode = 0; // 0 -> off | 1 -> on
 
 double perspectiveMatrix[4][4];
 
@@ -34,14 +35,53 @@ void InitPerspectiveMatrix() {
     perspectiveMatrix[3][2] = -1.0;
 }
 
+Vertex RotateVertexAroundAxis(Vertex vx, double angle, RotationAxis axis) {
+    switch (axis) {
+        case X_AXIS:
+            return MatrixVec3Multiplication(vx, 3, 
+                (double[3][3]){
+                    {1, 0, 0},
+                    {0, cos(angle), - sin(angle)},
+                    {0, sin(angle), cos(angle)},
+                }
+            );
+        case Y_AXIS:
+            return MatrixVec3Multiplication(vx, 3, 
+                (double[3][3]){
+                    {cos(angle), 0, sin(angle)},
+                    {0, 1, 0},
+                    {- sin(angle), 0, cos(angle)},
+                }
+            );
+        case Z_AXIS:
+            return MatrixVec3Multiplication(vx, 3, 
+                (double[3][3]){
+                    {cos(angle), - sin(angle), 0},
+                    {sin(angle), cos(angle), 0},
+                    {0, 0, 1 },
+                }
+            );
+        default:
+            return vx;
+    }
+}
+
+Vertex TranslateVertexAlongAxis(Vertex vx, double n, MovementAxis axis) {
+    switch (axis) {
+        case X_AXIS:
+            return (Vertex){ vx.x + n, vx.y, vx.z };
+        case Y_AXIS:
+            return (Vertex){ vx.x, vx.y + n, vx.z };
+        case Z_AXIS:
+            return (Vertex){ vx.x, vx.y, vx.z + n };
+        default:
+            return vx;
+    }
+}
+
 ClipCoords ClipSpaceTransform(Vertex vx) {
     // Multiply vertex coordinates by perspective matrix -> return clip coordinates
-    return (ClipCoords) {
-        vx.x * perspectiveMatrix[0][0],
-        vx.y * perspectiveMatrix[1][1],
-        vx.z * perspectiveMatrix[2][2] + perspectiveMatrix[2][3],
-        vx.z * perspectiveMatrix[3][2],
-    };
+    return MatrixVec4Multiplication((Vec4){ vx.x, vx.y, vx.z, 1.0}, 4, perspectiveMatrix);
 }
 
 NdCoords NormalizeDeviceCoordinates(ClipCoords cc) {
@@ -72,6 +112,17 @@ int min(int a, int b, int c) {
     return _min < c ? _min : c;
 }
 
+int clamp(int n, int max, int min) {
+    if (n < max && n > min) {
+        return n;
+    }
+    else if (n > max) {
+        return max;
+    }
+
+    return min;
+}
+
 int MaxFragmentsInTriangle(WindowCoords wc[3], BoundingBox *bb) {
     // Calculates the max amount of fragments a given triangle could have based on it's vertices
     // Also updates the triangle's bounding box for faster scan conversion
@@ -84,10 +135,10 @@ int MaxFragmentsInTriangle(WindowCoords wc[3], BoundingBox *bb) {
 
     //rintf("min X: %d\nmax X: %d\nmin Y: %d\nmaxY: %d\n", minX, maxX, minY, maxY);
 
-    bb->x1 = minX;
-    bb->x2 = maxX;
-    bb->y1 = minY;
-    bb->y2 = maxY;
+    bb->x1 = clamp(minX, width, 0);
+    bb->x2 = clamp(maxX, width, 0);;
+    bb->y1 = clamp(minY, height, 0);;
+    bb->y2 = clamp(maxY, height, 0);;
 
     return (maxX - minX) * (maxY - minY);
 }
@@ -188,6 +239,8 @@ int main(void) {
     BoundingBox box;
 
     // main loop
+
+    double angle = 1.0;
     while (running == 1) {
         tb_clear();
         // --- rasterisation stuff ---
@@ -198,13 +251,17 @@ int main(void) {
         ClearDepthBuffer(screenCells);
 
         for (int i = 0; i < triangleCount; i++) {
-            for (int v = 0; v < 3; v++) {
-                finalWC[v] = WindowTransformation(
-                    NormalizeDeviceCoordinates(
-                        ClipSpaceTransform(mesh[i].vertices[v])
-                    )
-                );
+            ClipCoords c0 = ClipSpaceTransform(TranslateVertexAlongAxis(RotateVertexAroundAxis(mesh[i].vertices[0], angle * PI / 180.0, Y_AXIS), -1.5, Z_AXIS));
+            ClipCoords c1 = ClipSpaceTransform(TranslateVertexAlongAxis(RotateVertexAroundAxis(mesh[i].vertices[1], angle * PI / 180.0, Y_AXIS), -1.5, Z_AXIS));
+            ClipCoords c2 = ClipSpaceTransform(TranslateVertexAlongAxis(RotateVertexAroundAxis(mesh[i].vertices[2], angle * PI / 180.0, Y_AXIS), -1.5, Z_AXIS));
+
+            if(c0.w <= 0.0 || c1.w <= 0.0 || c2.w <= 0.0) {
+                continue;
             }
+
+            finalWC[0] = WindowTransformation(NormalizeDeviceCoordinates(c0));
+            finalWC[1] = WindowTransformation(NormalizeDeviceCoordinates(c1));
+            finalWC[2] = WindowTransformation(NormalizeDeviceCoordinates(c2));
 
             Fragment *frags = malloc(MaxFragmentsInTriangle(finalWC, &box) * sizeof(Fragment));
 
@@ -219,11 +276,13 @@ int main(void) {
 
         tb_present();
 
-        tb_poll_event(&ev);
+        tb_peek_event(&ev, 10);
 
         if (ev.key == TB_KEY_CTRL_C) {
             running = 0;
         }
+
+        angle++;
     }
 
     tb_shutdown();
