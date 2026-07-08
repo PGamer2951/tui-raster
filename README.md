@@ -2,6 +2,8 @@
 
 A software renderer/rasterizer made in C with no dependencies other than [termbox2](https://github.com/termbox/termbox2) for rendering text to the terminal and standard C libs.
 
+https://github.com/user-attachments/assets/8b14594e-5b82-417b-901e-d5c14c99a2b6
+
 ## Building it locally
 ### (For linux)
 ### Pre-requisites
