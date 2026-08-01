@@ -1,1 +1,3 @@
-*.o
+*.gif
+*.tape
+/tui-raster

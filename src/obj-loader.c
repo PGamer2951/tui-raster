@@ -1,10 +1,5 @@
 #include "../include/obj-loader.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-
 int LoadFromFile(char *path, Triangle *mesh) {
     Vertex vertices[300];
 

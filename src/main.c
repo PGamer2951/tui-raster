@@ -1,10 +1,8 @@
-#include <math.h>
-
-#define TB_IMPL
-#include <termbox2.h>
-
 #include "../include/obj-loader.h"
 #include "../include/matrix-math.h"
+#include "../include/term.h"
+
+struct termios original;
 
 int width, height;
 
@@ -12,7 +10,7 @@ int wireframeMode = 1; // 0 -> off | 1 -> on
 
 double perspectiveMatrix[4][4];
 
-void InitPerspectiveMatrix() {
+void UpdatePerspectiveMatrix() {
     // Initialize the perspective matrix to use in Clip Space Transformation
     double fov = 70.0 * PI / 180.0; // Convert fov from degrees to radians
     double aspect = (double)width / height;
@@ -204,14 +202,11 @@ int ScanConversion(WindowCoords *wc, Fragment *frags, BoundingBox *bb, Cell *cel
     return count;
 }
 
-void FragmentWriting(Fragment *frags, int count) {
+void FragmentWriting(Fragment *frags, TextBuffer *buf, int count) {
     // write each fragment to the screen with termbox2
     for (int f = 0; f < count; f++) {
-        uint32_t unicode;
-        char ch = '#';
-        uintattr_t color = 0x0000;
-        tb_utf8_char_to_unicode(&unicode, &ch);
-        tb_set_cell(frags[f].x, frags[f].y, unicode, color, 0);
+        //tb_set_cell(frags[f].x, frags[f].y, unicode, color, 0);
+        AddToBuffer(buf, frags[f].x, frags[f].y, '#');
     }
 }
 
@@ -228,30 +223,43 @@ int main(void) {
     Triangle *mesh = malloc(sizeof(Triangle) * 100);
     int triangleCount = LoadFromFile("data/cube.obj", mesh);
 
-    if (tb_init() != TB_OK) { return 1; } // initialize termbox2
-    tb_set_output_mode(2); // allow termbox2 to use more colors
+    tcgetattr(STDIN_FILENO, &original);
 
-    struct tb_event ev;
+    EnableRawMode(&original);
+    InitTerm();
+
     int running = 1;
 
-    width = tb_width();
-    height = tb_height();
+    width = TermWidth();
+    height = TermHeight();
 
-    InitPerspectiveMatrix();
+    TextBuffer buffer = {
+        malloc(width * height),
+        width * height,
+    };
+
+    Cell *screenCells = malloc(width * height * sizeof(Cell));
 
     WindowCoords finalWC[3];
     BoundingBox box;
 
     // main loop
+    double angle = 0.0;
 
-    double angle = 1.0;
     while (running == 1) {
-        tb_clear();
-        // --- rasterisation stuff ---
-        width = tb_width();
-        height = tb_height();
+        width = TermWidth();
+        height = TermHeight();
 
-        Cell *screenCells = malloc(width * height * sizeof(Cell));
+        UpdatePerspectiveMatrix();
+
+        screenCells = realloc(screenCells, width * height * sizeof(Cell));
+
+        buffer.data = realloc(buffer.data, width * height * sizeof(char));
+        buffer.width = width;
+        buffer.height = height;
+
+        ClearBuffer(&buffer);
+        
         ClearDepthBuffer(screenCells);
 
         for (int i = 0; i < triangleCount; i++) {
@@ -271,26 +279,27 @@ int main(void) {
 
             int count = ScanConversion(finalWC, frags, &box, screenCells);
 
-            FragmentWriting(frags, count);
+            FragmentWriting(frags, &buffer, count);
 
             free(frags);
         }
 
-        free(screenCells);
+        PresentBuffer(&buffer);
 
-        tb_present();
-
-        tb_peek_event(&ev, 10);
-
-        if (ev.key == TB_KEY_CTRL_C) {
-            running = 0;
+        char c[3];
+        if(PeekInput(c) == OK) {
+            if (c[0] == 'q') {
+                running = 0;
+            }
         }
 
         angle += 0.5;
     }
 
-    tb_shutdown();
+    ShutdownTerm(&original);
 
+    free(buffer.data);
+    free(screenCells);
     free(mesh);
 
     return 0;

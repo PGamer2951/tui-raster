@@ -1,6 +1,14 @@
 #ifndef CUSTOM_TYPES_H
 #define CUSTOM_TYPES_H
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <termios.h>
+#include <sys/ioctl.h>
+#include <math.h>
+
 #define PI 3.1415926
 
 typedef struct {
