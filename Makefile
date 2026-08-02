@@ -10,3 +10,4 @@ clean: tui-raster.o
 
 obj-loader.c: include/obj-loader.h
 matrix-math.c: include/matrix-math.h
+term.c: include/term.h

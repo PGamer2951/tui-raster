@@ -50,4 +50,10 @@ typedef enum {
     Z_AXIS,
 } RotationAxis, MovementAxis;
 
+typedef struct {
+    Vec3 pos;
+    double pitch;
+    double yaw;
+} Camera;
+
 #endif

@@ -6,13 +6,13 @@ struct termios original;
 
 int width, height;
 
-int wireframeMode = 1; // 0 -> off | 1 -> on
+int wireframeMode = 0; // 0 -> off | 1 -> on
 
 double perspectiveMatrix[4][4];
 
 void UpdatePerspectiveMatrix() {
     // Initialize the perspective matrix to use in Clip Space Transformation
-    double fov = 70.0 * PI / 180.0; // Convert fov from degrees to radians
+    double fov = 30.0 * PI / 180.0; // Convert fov from degrees to radians
     double aspect = (double)width / height;
 
     double fy = 1.0 / tan(fov / 2.0);
@@ -64,8 +64,8 @@ Vertex RotateVertexAroundAxis(Vertex vx, double angle, RotationAxis axis) {
     }
 }
 
-Vertex ThreeAxisRotation(Vertex vx, double angle) {
-    return RotateVertexAroundAxis(RotateVertexAroundAxis(RotateVertexAroundAxis(vx, angle, Z_AXIS), angle, Y_AXIS), angle, X_AXIS);
+Vertex RotateVertex(Vertex vx, double x, double y, double z) {
+    return RotateVertexAroundAxis(RotateVertexAroundAxis(RotateVertexAroundAxis(vx, z, Z_AXIS), y, Y_AXIS), x, X_AXIS);
 }
 
 Vertex TranslateVertexAlongAxis(Vertex vx, double n, MovementAxis axis) {
@@ -79,6 +79,10 @@ Vertex TranslateVertexAlongAxis(Vertex vx, double n, MovementAxis axis) {
         default:
             return vx;
     }
+}
+
+Vertex TranslateVertex(Vertex vx, double x, double y, double z) {
+    return TranslateVertexAlongAxis(TranslateVertexAlongAxis(TranslateVertexAlongAxis(vx, x, X_AXIS), z, Z_AXIS), y, Y_AXIS);
 }
 
 ClipCoords ClipSpaceTransform(Vertex vx) {
@@ -99,7 +103,7 @@ WindowCoords WindowTransformation(NdCoords nc) {
     // Convert normalized device coordinates to window coordinates -> return window coordinates
     return (WindowCoords) {
         (nc.x + 1) / 2 * width,
-        (nc.y + 1) / 2 * height,
+        (1.0 - (nc.y + 1) / 2) * height,
         (nc.z + 1) / 2,
     };
 }
@@ -202,11 +206,24 @@ int ScanConversion(WindowCoords *wc, Fragment *frags, BoundingBox *bb, Cell *cel
     return count;
 }
 
+char DepthToChar(double depth) {
+    // @ % # * + = - : .
+    char chars[9] = "@%#*+=-:.";
+
+    double targetDepth = 0.11;
+    for (int i = 0; i < 9; i++) {
+        if (depth < targetDepth) return chars[i];
+        targetDepth += 0.11;
+    }
+
+    return '.';
+}
+
 void FragmentWriting(Fragment *frags, TextBuffer *buf, int count) {
     // write each fragment to the screen with termbox2
     for (int f = 0; f < count; f++) {
         //tb_set_cell(frags[f].x, frags[f].y, unicode, color, 0);
-        AddToBuffer(buf, frags[f].x, frags[f].y, '#');
+        AddToBuffer(buf, frags[f].x, frags[f].y, DepthToChar(frags[f].z - 0.5));
     }
 }
 
@@ -220,8 +237,10 @@ void ClearDepthBuffer(Cell *cells) {
 }
 
 int main(void) {
-    Triangle *mesh = malloc(sizeof(Triangle) * 100);
-    int triangleCount = LoadFromFile("data/cube.obj", mesh);
+    Triangle *mesh = malloc(sizeof(Triangle) * 1000);
+    int triangleCount = LoadFromFile("data/suzanne_minimal.obj", mesh);
+
+    printf("Loaded Model");
 
     tcgetattr(STDIN_FILENO, &original);
 
@@ -244,7 +263,13 @@ int main(void) {
     BoundingBox box;
 
     // main loop
-    double angle = 0.0;
+    Camera cam = { 
+        { 0.0, 0.0, 0.0 },
+        0.0,
+        0.0,
+    };
+
+    double speed = 0.1;
 
     while (running == 1) {
         width = TermWidth();
@@ -263,9 +288,9 @@ int main(void) {
         ClearDepthBuffer(screenCells);
 
         for (int i = 0; i < triangleCount; i++) {
-            ClipCoords c0 = ClipSpaceTransform(TranslateVertexAlongAxis(ThreeAxisRotation(mesh[i].vertices[0], angle * PI / 180.0), -2.0, Z_AXIS));
-            ClipCoords c1 = ClipSpaceTransform(TranslateVertexAlongAxis(ThreeAxisRotation(mesh[i].vertices[1], angle * PI / 180.0), -2.0, Z_AXIS));
-            ClipCoords c2 = ClipSpaceTransform(TranslateVertexAlongAxis(ThreeAxisRotation(mesh[i].vertices[2], angle * PI / 180.0), -2.0, Z_AXIS));
+            ClipCoords c0 = ClipSpaceTransform(RotateVertex(TranslateVertex(mesh[i].vertices[0], -cam.pos.x, -cam.pos.y, -cam.pos.z), -cam.pitch, -cam.yaw, 0.0));
+            ClipCoords c1 = ClipSpaceTransform(RotateVertex(TranslateVertex(mesh[i].vertices[1], -cam.pos.x, -cam.pos.y, -cam.pos.z), -cam.pitch, -cam.yaw, 0.0));
+            ClipCoords c2 = ClipSpaceTransform(RotateVertex(TranslateVertex(mesh[i].vertices[2], -cam.pos.x, -cam.pos.y, -cam.pos.z), -cam.pitch, -cam.yaw, 0.0));
 
             if(c0.w <= 0.0 || c1.w <= 0.0 || c2.w <= 0.0) {
                 continue;
@@ -288,12 +313,47 @@ int main(void) {
 
         char c[3];
         if(PeekInput(c) == OK) {
-            if (c[0] == 'q') {
-                running = 0;
+            Vec3 forward = RotateVertexAroundAxis((Vec3){0.0, 0.0, -speed}, cam.yaw, Y_AXIS);
+            Vec3 backward = RotateVertexAroundAxis((Vec3){0.0, 0.0, speed}, cam.yaw, Y_AXIS);
+            Vec3 right = RotateVertexAroundAxis((Vec3){speed, 0.0, 0.0}, cam.yaw, Y_AXIS);
+            Vec3 left = RotateVertexAroundAxis((Vec3){-speed, 0.0, 0.0}, cam.yaw, Y_AXIS);
+
+            switch (c[0]) {
+                case 'q':
+                    running = 0;
+                    break;
+                case 'w':
+                    cam.pos = AddVec3(cam.pos, forward);
+                    break;
+                case 'a':
+                    cam.pos = AddVec3(cam.pos, left);
+                    break;
+                case 's':
+                    cam.pos = AddVec3(cam.pos, backward);
+                    break;
+                case 'd':
+                    cam.pos = AddVec3(cam.pos, right);
+                    break;
+                case 'r':
+                    cam.pos.y += speed;
+                    break;
+                case 'f':
+                    cam.pos.y -= speed;
+                    break;
+                case 'i':
+                    cam.pitch += speed;
+                    break;
+                case 'k':
+                    cam.pitch -= speed;
+                    break;
+                case 'j':
+                    cam.yaw += speed;
+                    break;
+                case 'l':
+                    cam.yaw -= speed;
+                    break;
             }
         }
-
-        angle += 0.5;
     }
 
     ShutdownTerm(&original);

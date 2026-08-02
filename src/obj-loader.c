@@ -1,7 +1,7 @@
 #include "../include/obj-loader.h"
 
 int LoadFromFile(char *path, Triangle *mesh) {
-    Vertex vertices[300];
+    Vertex vertices[1000];
 
     FILE *ptr = fopen(path, "r");
 
@@ -10,7 +10,7 @@ int LoadFromFile(char *path, Triangle *mesh) {
         return 0;
     }
 
-    char data[50];
+    char data[100];
 
     int vertexCount = 0;
     int triangleCount = 0;
