@@ -1,4 +1,4 @@
 *.gif
 *.tape
 /tui-raster
-data/*
+*.obj
