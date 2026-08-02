@@ -6,12 +6,6 @@
 #define OK  0
 #define ERR 1
 
-typedef struct {
-    char *data;
-    int width;
-    int height;
-} TextBuffer;
-
 int TermWidth();
 
 int TermHeight();
@@ -20,7 +14,7 @@ void EnableRawMode(struct termios *original);
 
 void DisableRawMode(struct termios *original);
 
-void InitTerm();
+void InitTerm(struct termios *original);
 
 void ShutdownTerm(struct termios *original);
 

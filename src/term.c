@@ -27,7 +27,9 @@ int TermHeight() {
     return w.ws_row;
 }
 
-void InitTerm() {
+void InitTerm(struct termios *original) {
+    EnableRawMode(original);
+    
     write(STDOUT_FILENO, "\x1B[H", 3);
     write(STDOUT_FILENO, "\x1B[2J", 4);
     write(STDOUT_FILENO, "\x1B[?25l", 6);

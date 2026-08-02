@@ -9,8 +9,6 @@
 #include <sys/ioctl.h>
 #include <math.h>
 
-#define PI 3.1415926
-
 typedef struct {
     double x1;
     double y1;
@@ -32,17 +30,19 @@ typedef struct {
 } WindowCoords, Fragment, Vertex, Vec3, NdCoords;
 
 typedef struct {
-    Fragment *data;
-    int count;
-} FragmentList;
-
-typedef struct {
     double currentDepth;
 } Cell;
 
 typedef struct {
     Vertex vertices[3];
 } Triangle;
+
+typedef struct {
+    Triangle *mesh;
+    int triangleCount;
+    Vec3 position;
+    Vec3 rotation;
+} Object;
 
 typedef enum {
     X_AXIS,
@@ -51,9 +51,16 @@ typedef enum {
 } RotationAxis, MovementAxis;
 
 typedef struct {
+    char *data;
+    int width;
+    int height;
+} TextBuffer;
+
+typedef struct {
     Vec3 pos;
     double pitch;
     double yaw;
+    double speed;
 } Camera;
 
 #endif
