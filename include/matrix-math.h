@@ -7,4 +7,6 @@ Vec3 MatrixVec3Multiplication(Vec3 vec, int matrixSize, double matrix[matrixSize
 Vec4 MatrixVec4Multiplication(Vec4 vec, int matrixSize, double matrix[matrixSize][matrixSize]);
 
 Vec3 AddVec3(Vec3 vec1, Vec3 vec2);
+
+Vec3 RotateVec3AroundAxis(Vec3 vec, double angle, RotationAxis axis);
 #endif

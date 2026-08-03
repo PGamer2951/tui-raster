@@ -61,3 +61,34 @@ Vec4 MatrixVec4Multiplication(Vec4 vec, int matrixSize, double matrix[matrixSize
 Vec3 AddVec3(Vec3 vec1, Vec3 vec2) {
     return (Vec3) {vec1.x + vec2.x, vec1.y + vec2.y, vec1.z + vec2.z};
 }
+
+Vec3 RotateVec3AroundAxis(Vec3 vec, double angle, RotationAxis axis) {
+    switch (axis) {
+        case X_AXIS:
+            return MatrixVec3Multiplication(vec, 3, 
+                (double[3][3]){
+                    {1, 0, 0},
+                    {0, cos(angle), - sin(angle)},
+                    {0, sin(angle), cos(angle)},
+                }
+            );
+        case Y_AXIS:
+            return MatrixVec3Multiplication(vec, 3, 
+                (double[3][3]){
+                    {cos(angle), 0, sin(angle)},
+                    {0, 1, 0},
+                    {- sin(angle), 0, cos(angle)},
+                }
+            );
+        case Z_AXIS:
+            return MatrixVec3Multiplication(vec, 3, 
+                (double[3][3]){
+                    {cos(angle), - sin(angle), 0},
+                    {sin(angle), cos(angle), 0},
+                    {0, 0, 1 },
+                }
+            );
+    }
+
+    return vec;
+}

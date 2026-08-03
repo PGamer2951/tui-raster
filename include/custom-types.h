@@ -27,7 +27,13 @@ typedef struct {
     double x;
     double y;
     double z;
-} WindowCoords, Fragment, Vertex, Vec3, NdCoords;
+} WindowCoords, Fragment, Vec3, NdCoords;
+
+typedef struct {
+    Vec3 pos;
+    Vec3 nor;
+    Vec3 uv;
+} Vertex;
 
 typedef struct {
     double currentDepth;

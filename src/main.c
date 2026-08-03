@@ -37,34 +37,39 @@ void UpdatePerspectiveMatrix() {
 
 // Rotate a vertex by angle around an axis (x, y or z).
 Vertex RotateVertexAroundAxis(Vertex vx, double angle, RotationAxis axis) {
+    Vertex out = vx;
+
     switch (axis) {
         case X_AXIS:
-            return MatrixVec3Multiplication(vx, 3, 
+            out.pos = MatrixVec3Multiplication(vx.pos, 3, 
                 (double[3][3]){
                     {1, 0, 0},
                     {0, cos(angle), - sin(angle)},
                     {0, sin(angle), cos(angle)},
                 }
             );
+            break;
         case Y_AXIS:
-            return MatrixVec3Multiplication(vx, 3, 
+            out.pos = MatrixVec3Multiplication(vx.pos, 3, 
                 (double[3][3]){
                     {cos(angle), 0, sin(angle)},
                     {0, 1, 0},
                     {- sin(angle), 0, cos(angle)},
                 }
             );
+            break;
         case Z_AXIS:
-            return MatrixVec3Multiplication(vx, 3, 
+            out.pos = MatrixVec3Multiplication(vx.pos, 3, 
                 (double[3][3]){
                     {cos(angle), - sin(angle), 0},
                     {sin(angle), cos(angle), 0},
                     {0, 0, 1 },
                 }
             );
-        default:
-            return vx;
+            break;
     }
+
+    return out;
 }
 
 // Rotate a vertex around all axis at once.
@@ -74,16 +79,24 @@ Vertex RotateVertex(Vertex vx, double x, double y, double z) {
 
 // Move a vertex by n in a given axis (x, y or z).
 Vertex TranslateVertexAlongAxis(Vertex vx, double n, MovementAxis axis) {
+    Vertex out = vx;
+
     switch (axis) {
         case X_AXIS:
-            return (Vertex){ vx.x + n, vx.y, vx.z };
+            out.pos.x += n;
+            break;
+            //return (Vertex){ vx.pos.x + n, vx.pos.y, vx.pos.z };
         case Y_AXIS:
-            return (Vertex){ vx.x, vx.y + n, vx.z };
+            out.pos.y += n;
+            break;
+            //return (Vertex){ vx.pos.x, vx.pos.y + n, vx.pos.z };
         case Z_AXIS:
-            return (Vertex){ vx.x, vx.y, vx.z + n };
-        default:
-            return vx;
+            out.pos.z += n;
+            break;
+            //return (Vertex){ vx.pos.x, vx.pos.y, vx.pos.z + n };
     }
+
+    return out;
 }
 
 // Move a vertex in all 3 axis at once.
@@ -105,7 +118,7 @@ Vertex ViewTransfrom(Vertex vx, Camera cam) {
 
 // Multiply vertex coordinates by perspective matrix -> return clip coordinates.
 ClipCoords ClipSpaceTransform(Vertex vx) {
-    return MatrixVec4Multiplication((Vec4){ vx.x, vx.y, vx.z, 1.0}, 4, perspectiveMatrix);
+    return MatrixVec4Multiplication((Vec4){ vx.pos.x, vx.pos.y, vx.pos.z, 1.0}, 4, perspectiveMatrix);
 }
 
 // Divide cc's x, y and z components by w -> return normalized device coordinates.
@@ -254,24 +267,28 @@ void ClearDepthBuffer(Cell *cells) {
 }
 
 int main(void) {
+    //Triangle *test = malloc(sizeof(Triangle) * 1000);
+    //int val = LoadFromFile("data/suzanne.obj", test);
+    //return 0;
+
     // Loading scene
-    Object cube = {
-        malloc(sizeof(Triangle) * 12),
+    Object car = {
+        malloc(sizeof(Triangle) * 1000),
         0,
         {2.0, 0.0, -4.0},
         {0.0, 0.0, 0.0},
     };
-    cube.triangleCount = LoadFromFile("data/cube.obj", cube.mesh);
+    car.triangleCount = LoadFromFile("data/Car.obj", car.mesh);
 
     Object monkey = {
         malloc(sizeof(Triangle) * 1000),
         0,
-        {-2.0, 2.0, 2.0},
+        {-1.0, 0.5, 2.0},
         {0.0, 0.0, 0.0}
     };
-    monkey.triangleCount = LoadFromFile("data/suzanne_minimal.obj", monkey.mesh);
+    monkey.triangleCount = LoadFromFile("data/suzanne.obj", monkey.mesh);
 
-    Object scene[2] = {cube, monkey};
+    Object scene[2] = {monkey, car};
 
     // Terminal setup
     tcgetattr(STDIN_FILENO, &original);
@@ -330,7 +347,7 @@ int main(void) {
 
         // Main rendering
         for (int i = 0; i < 2; i++) {
-            for (int j = 0; j < scene[i].triangleCount; j++) {
+            for (int j = 0; j < scene[0].triangleCount; j++) {
                 ClipCoords c0 = ClipSpaceTransform(ViewTransfrom(LocalTransform(scene[i].mesh[j].vertices[0], scene[i]), cam));
                 ClipCoords c1 = ClipSpaceTransform(ViewTransfrom(LocalTransform(scene[i].mesh[j].vertices[1], scene[i]), cam));
                 ClipCoords c2 = ClipSpaceTransform(ViewTransfrom(LocalTransform(scene[i].mesh[j].vertices[2], scene[i]), cam));
@@ -355,10 +372,10 @@ int main(void) {
         // Input handling and camera movement + rotation
         char c[3];
         if(PeekInput(c) == OK) {
-            Vec3 forward = RotateVertexAroundAxis((Vec3){0.0, 0.0, -cam.speed}, cam.yaw, Y_AXIS);
-            Vec3 backward = RotateVertexAroundAxis((Vec3){0.0, 0.0, cam.speed}, cam.yaw, Y_AXIS);
-            Vec3 right = RotateVertexAroundAxis((Vec3){cam.speed, 0.0, 0.0}, cam.yaw, Y_AXIS);
-            Vec3 left = RotateVertexAroundAxis((Vec3){-cam.speed, 0.0, 0.0}, cam.yaw, Y_AXIS);
+            Vec3 forward = RotateVec3AroundAxis((Vec3){0.0, 0.0, -cam.speed}, cam.yaw, Y_AXIS);
+            Vec3 backward = RotateVec3AroundAxis((Vec3){0.0, 0.0, cam.speed}, cam.yaw, Y_AXIS);
+            Vec3 right = RotateVec3AroundAxis((Vec3){cam.speed, 0.0, 0.0}, cam.yaw, Y_AXIS);
+            Vec3 left = RotateVec3AroundAxis((Vec3){-cam.speed, 0.0, 0.0}, cam.yaw, Y_AXIS);
 
             switch (c[0]) {
                 case 'q':
@@ -404,7 +421,6 @@ int main(void) {
     free(buffer.data);
     free(screenCells);
     free(frags);
-    free(cube.mesh);
     free(monkey.mesh);
 
     return 0;
