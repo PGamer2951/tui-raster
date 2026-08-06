@@ -1,0 +1,9 @@
+LOAD data/cars/Car4.obj
+LOAD data/cars/Car5.obj
+LOAD data/cars/Car6.obj
+
+MOVE 0 -8/0/-2
+MOVE 1 0/0/-2
+MOVE 2 8/0/-2
+
+ROTATE 1 0/90/0

@@ -1,8 +1,10 @@
-#include "../include/obj-loader.h"
 #include "../include/matrix-math.h"
 #include "../include/term.h"
+#include "../include/scene-loader.h"
 
 #define PI 3.1415926
+
+#define DEG2RAD(x) ((x)*PI / 180.0f)
 
 struct termios original;
 
@@ -10,23 +12,23 @@ int width, height;
 
 int wireframeMode = 1;
 
-double perspectiveMatrix[4][4];
+float perspectiveMatrix[4][4];
 
 // Initialize the perspective matrix to use in Clip Space Transformation.
 void UpdatePerspectiveMatrix() {
-    double fov = 30.0 * PI / 180.0; // Convert fov from degrees to radians
-    double aspect = (double)width / height;
+    float fov = 40.0 * PI / 180.0; // Convert fov from degrees to radians
+    float aspect = (float)width / height;
 
-    double fy = 1.0 / tan(fov / 2.0);
-    double fx = fy / aspect;
+    float fy = 1.0 / tan(fov / 2.0);
+    float fx = fy / aspect;
 
-    double zNear = 0.2;
-    double zFar = 4.0;
+    float zNear = 0.2;
+    float zFar = 4.0;
 
-    double clip1 = (zFar + zNear) / (zNear - zFar);
-    double clip2 = (2 * zFar * zNear) / (zNear - zFar);
+    float clip1 = (zFar + zNear) / (zNear - zFar);
+    float clip2 = (2 * zFar * zNear) / (zNear - zFar);
 
-    memset(&perspectiveMatrix, 0,16*sizeof(double));
+    memset(&perspectiveMatrix, 0,16*sizeof(float));
 
     perspectiveMatrix[0][0] = fx;
     perspectiveMatrix[1][1] = fy;
@@ -36,33 +38,33 @@ void UpdatePerspectiveMatrix() {
 }
 
 // Rotate a vertex by angle around an axis (x, y or z).
-Vertex RotateVertexAroundAxis(Vertex vx, double angle, RotationAxis axis) {
+Vertex RotateVertexAroundAxis(Vertex vx, float angle, RotationAxis axis) {
     Vertex out = vx;
 
     switch (axis) {
         case X_AXIS:
             out.pos = MatrixVec3Multiplication(vx.pos, 3, 
-                (double[3][3]){
+                (float[3][3]){
                     {1, 0, 0},
-                    {0, cos(angle), - sin(angle)},
-                    {0, sin(angle), cos(angle)},
+                    {0, cos(DEG2RAD(angle)), - sin(DEG2RAD(angle))},
+                    {0, sin(DEG2RAD(angle)), cos(DEG2RAD(angle))},
                 }
             );
             break;
         case Y_AXIS:
             out.pos = MatrixVec3Multiplication(vx.pos, 3, 
-                (double[3][3]){
-                    {cos(angle), 0, sin(angle)},
+                (float[3][3]){
+                    {cos(DEG2RAD(angle)), 0, sin(DEG2RAD(angle))},
                     {0, 1, 0},
-                    {- sin(angle), 0, cos(angle)},
+                    {- sin(DEG2RAD(angle)), 0, cos(DEG2RAD(angle))},
                 }
             );
             break;
         case Z_AXIS:
             out.pos = MatrixVec3Multiplication(vx.pos, 3, 
-                (double[3][3]){
-                    {cos(angle), - sin(angle), 0},
-                    {sin(angle), cos(angle), 0},
+                (float[3][3]){
+                    {cos(DEG2RAD(angle)), - sin(DEG2RAD(angle)), 0},
+                    {sin(DEG2RAD(angle)), cos(DEG2RAD(angle)), 0},
                     {0, 0, 1 },
                 }
             );
@@ -73,34 +75,31 @@ Vertex RotateVertexAroundAxis(Vertex vx, double angle, RotationAxis axis) {
 }
 
 // Rotate a vertex around all axis at once.
-Vertex RotateVertex(Vertex vx, double x, double y, double z) {
+Vertex RotateVertex(Vertex vx, float x, float y, float z) {
     return RotateVertexAroundAxis(RotateVertexAroundAxis(RotateVertexAroundAxis(vx, z, Z_AXIS), y, Y_AXIS), x, X_AXIS);
 }
 
 // Move a vertex by n in a given axis (x, y or z).
-Vertex TranslateVertexAlongAxis(Vertex vx, double n, MovementAxis axis) {
+Vertex TranslateVertexAlongAxis(Vertex vx, float n, MovementAxis axis) {
     Vertex out = vx;
 
     switch (axis) {
         case X_AXIS:
             out.pos.x += n;
             break;
-            //return (Vertex){ vx.pos.x + n, vx.pos.y, vx.pos.z };
         case Y_AXIS:
             out.pos.y += n;
             break;
-            //return (Vertex){ vx.pos.x, vx.pos.y + n, vx.pos.z };
         case Z_AXIS:
             out.pos.z += n;
             break;
-            //return (Vertex){ vx.pos.x, vx.pos.y, vx.pos.z + n };
     }
 
     return out;
 }
 
 // Move a vertex in all 3 axis at once.
-Vertex TranslateVertex(Vertex vx, double x, double y, double z) {
+Vertex TranslateVertex(Vertex vx, float x, float y, float z) {
     return TranslateVertexAlongAxis(TranslateVertexAlongAxis(TranslateVertexAlongAxis(vx, x, X_AXIS), z, Z_AXIS), y, Y_AXIS);
 }
 
@@ -187,15 +186,15 @@ int ScanConversion(WindowCoords *wc, Fragment *frags, BoundingBox *bb, Cell *cel
     int count = 0;
     for (int x = bb->x1; x < bb->x2; x++) {
         for (int y = bb->y1; y < bb->y2; y++) {
-            double det = ((wc2.y-wc3.y)*(wc1.x-wc3.x)+(wc3.x-wc2.x)*(wc1.y-wc3.y));
+            float det = ((wc2.y-wc3.y)*(wc1.x-wc3.x)+(wc3.x-wc2.x)*(wc1.y-wc3.y));
 
-            double lambda1 = (
+            float lambda1 = (
                 ((wc2.y-wc3.y)*(x-wc3.x)+(wc3.x-wc2.x)*(y-wc3.y)) / det
             );
-            double lambda2 = (
+            float lambda2 = (
                 ((wc3.y-wc1.y)*(x-wc3.x)+(wc1.x-wc3.x)*(y-wc3.y)) / det
             );
-            double lambda3 = (
+            float lambda3 = (
                 1 - lambda1 - lambda2
             );
 
@@ -203,7 +202,7 @@ int ScanConversion(WindowCoords *wc, Fragment *frags, BoundingBox *bb, Cell *cel
                 // Check if rendering in wireframe mode
                 if (wireframeMode == 0) {
                     // Render normally
-                    double depth = wc1.z * lambda1 + wc2.z * lambda2 + wc3.z * lambda3;
+                    float depth = wc1.z * lambda1 + wc2.z * lambda2 + wc3.z * lambda3;
                     if (depth < cells[x + (y * width)].currentDepth) {
                         frags[count] = (Fragment){
                             x,
@@ -216,7 +215,7 @@ int ScanConversion(WindowCoords *wc, Fragment *frags, BoundingBox *bb, Cell *cel
                 }
                 else if (lambda1 <= 0.05 || lambda2 <= 0.05 || lambda3 <= 0.05) {
                     // Render in wireframe mode
-                    double depth = wc1.z * lambda1 + wc2.z * lambda2 + wc3.z * lambda3;
+                    float depth = wc1.z * lambda1 + wc2.z * lambda2 + wc3.z * lambda3;
                     if (depth < cells[x + (y * width)].currentDepth) {
                         frags[count] = (Fragment){
                             x,
@@ -235,25 +234,10 @@ int ScanConversion(WindowCoords *wc, Fragment *frags, BoundingBox *bb, Cell *cel
     return count;
 }
 
-// Map a depth value to the corresponding char to render on the terminal.
-char DepthToChar(double depth) {
-    // @ % # * + = - : .
-    char chars[4] = "@%#?";
-
-    double targetDepth = 0.25;
-
-    for (int i = 0; i < 4; i++) {
-        if (depth < targetDepth) return chars[i];
-        targetDepth += 0.25;
-    }
-
-    return '=';
-}
-
 // Write each fragment to the screen with the custom term.h terminal renderer.
 void FragmentWriting(Fragment *frags, TextBuffer *buf, int count) {
     for (int f = 0; f < count; f++) {
-        AddToBuffer(buf, frags[f].x, frags[f].y, DepthToChar(frags[f].z));
+        AddToBuffer(buf, frags[f].x, frags[f].y, '@');
     }
 }
 
@@ -266,29 +250,30 @@ void ClearDepthBuffer(Cell *cells) {
     }
 }
 
+void RenderTriangle(Triangle *triangle, Object *obj, Camera *cam, Cell *screenCells, TextBuffer *buffer, Fragment *frags) {
+    ClipCoords c0 = ClipSpaceTransform(ViewTransfrom(LocalTransform(triangle->vertices[0], *obj), *cam));
+    ClipCoords c1 = ClipSpaceTransform(ViewTransfrom(LocalTransform(triangle->vertices[1], *obj), *cam));
+    ClipCoords c2 = ClipSpaceTransform(ViewTransfrom(LocalTransform(triangle->vertices[2], *obj), *cam));
+
+    if (c0.w <= 0 || c1.w <= 0 || c2.w <= 0) {
+        return;
+    }
+
+    WindowCoords finalWC[3];
+    BoundingBox box;
+
+    finalWC[0] = WindowTransformation(NormalizeDeviceCoordinates(c0));
+    finalWC[1] = WindowTransformation(NormalizeDeviceCoordinates(c1));
+    finalWC[2] = WindowTransformation(NormalizeDeviceCoordinates(c2));
+
+    CalculateBoundingBox(finalWC, &box);
+    int count = ScanConversion(finalWC, frags, &box, screenCells);
+    FragmentWriting(frags, buffer, count);
+}
+
 int main(void) {
-    //Triangle *test = malloc(sizeof(Triangle) * 1000);
-    //int val = LoadFromFile("data/suzanne.obj", test);
-    //return 0;
-
-    // Loading scene
-    Object car = {
-        malloc(sizeof(Triangle) * 1000),
-        0,
-        {2.0, 0.0, -4.0},
-        {0.0, 0.0, 0.0},
-    };
-    car.triangleCount = LoadFromFile("data/Car.obj", car.mesh);
-
-    Object monkey = {
-        malloc(sizeof(Triangle) * 1000),
-        0,
-        {-1.0, 0.5, 2.0},
-        {0.0, 0.0, 0.0}
-    };
-    monkey.triangleCount = LoadFromFile("data/suzanne.obj", monkey.mesh);
-
-    Object scene[2] = {monkey, car};
+    Object *scene = malloc(3 * sizeof(Object));
+    int sceneSize = LoadSceneFromFile("demo.scene", scene);
 
     // Terminal setup
     tcgetattr(STDIN_FILENO, &original);
@@ -321,6 +306,7 @@ int main(void) {
         0.0,
         0.0,
         0.1,
+        1.0,
     };
 
     // Main loop
@@ -346,23 +332,9 @@ int main(void) {
         ClearDepthBuffer(screenCells);
 
         // Main rendering
-        for (int i = 0; i < 2; i++) {
-            for (int j = 0; j < scene[0].triangleCount; j++) {
-                ClipCoords c0 = ClipSpaceTransform(ViewTransfrom(LocalTransform(scene[i].mesh[j].vertices[0], scene[i]), cam));
-                ClipCoords c1 = ClipSpaceTransform(ViewTransfrom(LocalTransform(scene[i].mesh[j].vertices[1], scene[i]), cam));
-                ClipCoords c2 = ClipSpaceTransform(ViewTransfrom(LocalTransform(scene[i].mesh[j].vertices[2], scene[i]), cam));
-
-                if (c0.w <= 0 || c1.w <= 0 || c2.w <= 0) {
-                    continue;
-                }
-
-                finalWC[0] = WindowTransformation(NormalizeDeviceCoordinates(c0));
-                finalWC[1] = WindowTransformation(NormalizeDeviceCoordinates(c1));
-                finalWC[2] = WindowTransformation(NormalizeDeviceCoordinates(c2));
-
-                CalculateBoundingBox(finalWC, &box);
-                int count = ScanConversion(finalWC, frags, &box, screenCells);
-                FragmentWriting(frags, &buffer, count);
+        for (int i = 0; i < sceneSize; i++) {
+            for (int j = 0; j < scene[i].triangleCount; j++) {
+                RenderTriangle(&scene[i].mesh[j], &scene[i], &cam, screenCells, &buffer, frags);
             }
         }
 
@@ -400,16 +372,16 @@ int main(void) {
                     cam.pos.y -= cam.speed;
                     break;
                 case 'i':
-                    cam.pitch += cam.speed;
+                    cam.pitch += cam.rotationSpeed;
                     break;
                 case 'k':
-                    cam.pitch -= cam.speed;
+                    cam.pitch -= cam.rotationSpeed;
                     break;
                 case 'j':
-                    cam.yaw += cam.speed;
+                    cam.yaw += cam.rotationSpeed;
                     break;
                 case 'l':
-                    cam.yaw -= cam.speed;
+                    cam.yaw -= cam.rotationSpeed;
                     break;
             }
         }
@@ -421,7 +393,10 @@ int main(void) {
     free(buffer.data);
     free(screenCells);
     free(frags);
-    free(monkey.mesh);
+    
+    for (int i = 0; i < sceneSize; i++) {
+        free(scene[i].mesh);
+    }
 
     return 0;
 }

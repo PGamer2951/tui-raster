@@ -10,23 +10,23 @@
 #include <math.h>
 
 typedef struct {
-    double x1;
-    double y1;
-    double x2;
-    double y2;
+    float x1;
+    float y1;
+    float x2;
+    float y2;
 } BoundingBox;
 
 typedef struct {
-    double x;
-    double y;
-    double z;
-    double w;
+    float x;
+    float y;
+    float z;
+    float w;
 } ClipCoords, Vec4;
 
 typedef struct {
-    double x;
-    double y;
-    double z;
+    float x;
+    float y;
+    float z;
 } WindowCoords, Fragment, Vec3, NdCoords;
 
 typedef struct {
@@ -36,7 +36,7 @@ typedef struct {
 } Vertex;
 
 typedef struct {
-    double currentDepth;
+    float currentDepth;
 } Cell;
 
 typedef struct {
@@ -64,9 +64,10 @@ typedef struct {
 
 typedef struct {
     Vec3 pos;
-    double pitch;
-    double yaw;
-    double speed;
+    float pitch;
+    float yaw;
+    float speed;
+    float rotationSpeed;
 } Camera;
 
 #endif
