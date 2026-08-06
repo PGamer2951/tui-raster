@@ -32,9 +32,9 @@ There are three available commands in scene files:
 
 `LOAD <path-to-.obj-file>`
 
-Will load a render a new obj file
+Will load and render a new obj file
 
-It also attributes an id to an object based on when it's loaded, the first object loaded gets id 0, the second one gets id 1 and so on.
+It also attributes an id to the object based on the loading order, the first object loaded gets id 0, the second one gets id 1 and so on.
 
 `MOVE <id> <x>/<y>/<z>`
 
