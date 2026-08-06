@@ -14,7 +14,7 @@ Clone the repo
 
 Change into the repo's directory
 
-`cd tui-raster`
+`cd tui-software-renderer`
 
 Compile it with make
 
